@@ -2,8 +2,9 @@
 let shapeSlider;
 let densitySlider;
 let textInput;
-let textSize = 200;
+let textSize;
 let fillOption;
+let animate;
 
 // Arrays
 let startArray = [];
@@ -26,6 +27,12 @@ let shapeFill = 'Fill';
 let shapeSize = 6;
 let fontSize = 100;
 let textTyped = "Costales";
+let animation = "None";
+
+// Move shape
+let counter;
+let endCounter;
+let exponent;
 
 // Canvas Size.
 let myWidth = $("#canvasHolder").width();
@@ -37,6 +44,7 @@ function preload() {
 
 // This function is only called once. Everything within the function is executed once
 function setup() {
+
   // Create Canvas
   let canvas = createCanvas(myWidth, myWidth);
   canvas.parent('canvasHolder');
@@ -77,14 +85,21 @@ function setup() {
   fillOption = createSelect();
   fillOption.parent('fillOption');
   fillOption.option('Fill');
-  fillOption.option('No Fill');
+  fillOption.option('None');
   fillOption.changed(update);
+
+  // Drop down to change fill
+  animate = createSelect();
+  animate.parent('animateOption');
+  animate.option('None');
+  animate.option('Lines');
+  animate.option('Bezier');
+  animate.changed(update);
 
   // Default styling on the sketch
   noStroke();
   noFill();
   textAlign(CENTER);
-  rectMode(CENTER);
 }
 
 // draw() functin is called inside a loop and executed continiously
@@ -157,17 +172,16 @@ function drawPoints() {
     var yPos = lerp(startArray[i].yPos, endArray[i].yPos, startLerp);
 
     // Check which fill option is selected
-    if (shapeFill === 'Fill') {
-      noStroke;
+    if (shapeFill === "Fill") {
+      noStroke();
       fill(endArray[i].fill);
-    } else if (shapeFill === 'No Fill') {
+    } else if (shapeFill === "No Fill") {
       noFill();
       stroke(endArray[i].fill);
     }
 
     // Draw the shape
     ellipse(xPos, yPos, shapeSize, shapeSize);
-
   }
 }
 
@@ -185,17 +199,18 @@ function createTextGraphic() {
   textImg.loadPixels();
 }
 
+// Create animation
+function animateShape(){
+  
+}
+
 function update() {
   shapeSize = shapeSlider.value();
   pointDensity = densitySlider.value();
   fontSize = fontSizeSlider.value();
+  shapeFill = fillOption.value();
   textTyped = inputBox.value();
-
-  if (checkBox.checked() == true) {
-    shapeFill = true;
-  } else {
-    shapeFill = false;
-  }
+  animation = animate.value();
 
 
   endArray = [];
