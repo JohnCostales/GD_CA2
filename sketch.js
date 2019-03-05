@@ -11,28 +11,32 @@ let startArray = [];
 let endArray = [];
 
 // Variables for the start and end value of lerping
-let startLerp = 0;
-let endLerp = 200;
+let distCount = 0;
+let randomVal = 200;
 
 //Image loder
 let img;
-let load_image = 'image.jpg';
+let load_image = "image.jpg";
 
 // Variable to hold the text graphic
 let textImg;
 
 // Variables to change the text design
 let pointDensity = 8;
-let shapeFill = 'Fill';
+let shapeFill = "Fill";
 let shapeSize = 6;
 let fontSize = 100;
 let textTyped = "Costales";
 let animation = "None";
 
+// Set a fixed randomness
+let actRandomSeed = 1;
+
 // Move shape
 let counter;
-let endCounter;
-let exponent;
+let counterDir = true;
+let velocity;
+let lerpAmount;
 
 // Canvas Size.
 let myWidth = $("#canvasHolder").width();
@@ -44,10 +48,9 @@ function preload() {
 
 // This function is only called once. Everything within the function is executed once
 function setup() {
-
   // Create Canvas
   let canvas = createCanvas(myWidth, myWidth);
-  canvas.parent('canvasHolder');
+  canvas.parent("canvasHolder");
 
   // Function called to create the graphic
   createTextGraphic();
@@ -57,43 +60,41 @@ function setup() {
 
   // Slider to change shape size
   shapeSlider = createSlider(1, 20, 6);
-  shapeSlider.parent('radiusController');
+  shapeSlider.parent("radiusController");
   shapeSlider.class("shapeSlider");
   shapeSlider.changed(update);
-
 
   // Slider to change density of the image
   densitySlider = createSlider(1, 20, 6);
   densitySlider.class("densitySlider");
   densitySlider.changed(update);
-  densitySlider.parent('densityController');
+  densitySlider.parent("densityController");
 
   // Slider to change font size
   fontSizeSlider = createSlider(100, 800, 100);
-  fontSizeSlider.parent('fontSizeController');
+  fontSizeSlider.parent("fontSizeController");
   fontSizeSlider.class("fontSizeSlider");
   fontSizeSlider.changed(update);
-
 
   // Text input to display as a graphic
   inputBox = createInput(textTyped);
   inputBox.class("inputBox");
   inputBox.input(update);
-  inputBox.parent('inputBoxController');
+  inputBox.parent("inputBoxController");
 
   // Drop down to change fill
   fillOption = createSelect();
-  fillOption.parent('fillOption');
-  fillOption.option('Fill');
-  fillOption.option('None');
+  fillOption.parent("fillOption");
+  fillOption.option("Fill");
+  fillOption.option("None");
   fillOption.changed(update);
 
   // Drop down to change fill
   animate = createSelect();
-  animate.parent('animateOption');
-  animate.option('None');
-  animate.option('Lines');
-  animate.option('Bezier');
+  animate.parent("animateOption");
+  animate.option("None");
+  animate.option(" ");
+  animate.option("Collapse");
   animate.changed(update);
 
   // Default styling on the sketch
@@ -105,21 +106,11 @@ function setup() {
 // draw() functin is called inside a loop and executed continiously
 function draw() {
   background(255, 55);
-  randomSeed(1);
-
+  randomSeed(actRandomSeed);
   // Create new array of points for the graphic
+  // and draw the set array of points
   createArrays();
-
-  // Draw the set array of points
   drawPoints();
-
-
-  if (startLerp < 1) {
-    startLerp = startLerp + 0.02;
-  } else {
-    startLerp = 1;
-  }
-
 }
 
 // Create array start and end points.
@@ -134,10 +125,8 @@ function createArrays() {
       // Calculate the index for the pixels array from x and y
       let index = (x + y * textImg.width) * 4;
       let imgIndex = (x + y * img.width) * 4;
-
       // Get the red value from image
       let r = textImg.pixels[index];
-
       if (r < 128) {
         // Assign pixel value intp fill colour
         var rValue = img.pixels[imgIndex];
@@ -147,9 +136,8 @@ function createArrays() {
 
         // Push to random starting point
         startArray.push({
-          xPos: x + random(-endLerp, endLerp),
-          yPos: y + random(-endLerp, endLerp),
-          fill: fillColor
+          xPos: x + random(-randomVal, randomVal),
+          yPos: y + random(-randomVal, randomVal)
         });
         // Push the destination point with assigned fill colour
         endArray.push({
@@ -157,31 +145,55 @@ function createArrays() {
           yPos: y,
           fill: fillColor
         });
-
       }
-
     }
   }
 }
 
 function drawPoints() {
   for (let i = 0; i < endArray.length; i++) {
-
-    //Calculate the starting x and y positions
-    var xPos = lerp(startArray[i].xPos, endArray[i].xPos, startLerp);
-    var yPos = lerp(startArray[i].yPos, endArray[i].yPos, startLerp);
-
     // Check which fill option is selected
     if (shapeFill === "Fill") {
       noStroke();
       fill(endArray[i].fill);
-    } else if (shapeFill === "No Fill") {
+    } else if (shapeFill === "None") {
       noFill();
       stroke(endArray[i].fill);
     }
 
+    disCount = (counter / endArray.length) * velocity;
+    //Calculate the starting x and y positions
+    let xPos = lerp(startArray[i].xPos, endArray[i].xPos, distCount);
+    let yPos = lerp(startArray[i].yPos, endArray[i].yPos, distCount);
+
+    if (lerpAmount > 1) {
+      lerpAmount = 1;
+    }
+
     // Draw the shape
     ellipse(xPos, yPos, shapeSize, shapeSize);
+  }
+
+  // Check for Animation
+  if ((counterDir === true) & (animation === "Normal")) {
+    if (counter * velocity < endArray.length) {
+      counter++;
+    } else {
+      //console.log()
+      counterDir = false;
+      counter--;
+    }
+  } else {
+    if (counter * velocity > 0) {
+      counter--;
+    } else {
+      counterDir = true;
+    }
+    if (distCount < 1) {
+      distCount = distCount + 0.02;
+    } else {
+      distCount = 1;
+    }
   }
 }
 
@@ -195,14 +207,12 @@ function createTextGraphic() {
   textImg.textFont(font);
   textImg.textSize(fontSize);
   textImg.textAlign(CENTER);
-  textImg.text(textTyped, width / 2, fontSize);
+  textImg.text(textTyped, textImg.width / 2, textImg.height / 2 + fontSize);
   textImg.loadPixels();
 }
 
 // Create animation
-function animateShape(){
-  
-}
+function animateShape() {}
 
 function update() {
   shapeSize = shapeSlider.value();
@@ -211,8 +221,6 @@ function update() {
   shapeFill = fillOption.value();
   textTyped = inputBox.value();
   animation = animate.value();
-
-
   endArray = [];
   startArray = [];
   createTextGraphic();
@@ -222,5 +230,5 @@ function update() {
 
 function keyReleased() {
   // export png
-  if (keyCode == CONTROL) saveCanvas(gd.timestamp(), 'png');
+  if (keyCode == CONTROL) saveCanvas(gd.timestamp(), "png");
 }
